@@ -1,0 +1,27 @@
+{
+  "name": "multi-agent-poc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon --watch './**/*.ts' --exec 'ts-node' server.ts",
+    "build": "rm -rf dist && tsc && node dist/mockCrmServer.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.12.4",
+  "dependencies": {
+    "@apollo/server": "4.12.2",
+    "fuse.js": "7.1.0",
+    "graphql": "16.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.10",
+    "nodemon": "3.1.10",
+    "ts-node": "10.9.2",
+    "typescript": "5.8.3"
+  }
+}

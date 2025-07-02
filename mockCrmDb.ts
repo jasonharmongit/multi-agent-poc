@@ -10,7 +10,7 @@ export const companies = [
   },
   {
     id: 2,
-    name: "Globex Inc",
+    name: "Hubspot",
     industry: "Technology",
     website: "https://globex.com",
     address: "456 Elm St, Metropolis",
@@ -23,7 +23,7 @@ export const contacts = [
     first_name: "John",
     last_name: "Doe",
     email: "john.doe@acme.com",
-    company_id: 1,
+    company_id: 2,
   },
   {
     id: 2,
@@ -42,7 +42,7 @@ export const contacts = [
   {
     id: 4,
     first_name: "Bob",
-    last_name: "Williams",
+    last_name: "Doe",
     email: "bob.williams@globex.com",
     company_id: 2,
   },
