@@ -1,7 +1,10 @@
 import { createCrmAgentApp } from "./crm-a2a-agent.js";
 
-const { app, port } = createCrmAgentApp();
-
-app.listen(port, () => {
-  console.log(`CRM Agent running on http://localhost:${port}`);
-});
+(async () => {
+  const { app, port } = await createCrmAgentApp();
+  app.listen(port, () => {
+    console.log(`[CRM Agent] Server using new framework started on http://localhost:${port}`);
+    console.log(`[CRM Agent] Agent Card: http://localhost:${port}/.well-known/agent.json`);
+    console.log("[CRM Agent] Press Ctrl+C to stop the server");
+  });
+})();

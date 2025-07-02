@@ -5,13 +5,28 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import dotenv from "dotenv";
 import { createReactAgent } from "langchain/agents";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import { z } from "zod";
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const SYSTEM_INSTRUCTION = `
 You are a specialized assistant for CRM queries.
 Your sole purpose is to use the available CRM tools to answer questions about CRM history and contacts.
 If the user asks about anything else, politely state that you cannot help with that topic.
+
+TOOLS:
+{tools}
+
+TOOL NAMES:
+{tool_names}
+
+AGENT SCRATCHPAD:
+{agent_scratchpad}
+
 Set response status to inputRequired if the user needs to provide more information.
 Set response status to error if there is an error while processing the request.
 Set response status to completed if the request is complete.
@@ -22,7 +37,7 @@ const ResponseFormat = z.object({
   message: z.string(),
 });
 
-export class CrmAgent {
+export class CrmOpenAIAgent {
   private tools: any[];
   private model: ChatOpenAI;
   private agent: any; // LangChain agent instance
@@ -102,7 +117,7 @@ export async function fetchMcpTools(): Promise<any[]> {
   // Adjust the path to crm-mcp.js as needed for your project structure
   const transport = new StdioClientTransport({
     command: process.execPath, // Node.js executable
-    args: [require.resolve("./crm-mcp.js")], // Path to the MCP server file
+    args: [join(__dirname, "crm-mcp.js")], // Path to the MCP server file
   });
   await mcpClient.connect(transport);
   const tools = await loadMcpTools("MinimalCrmServer", mcpClient);

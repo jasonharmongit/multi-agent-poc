@@ -1,72 +1,70 @@
-import { A2AExpressApp, AgentCard, createTaskHandler } from "@a2a-js/sdk";
-import express, { Express } from "express";
-import { createCrmMcpServer } from "./crm-mcp.js";
+import { A2AExpressApp, DefaultRequestHandler, InMemoryTaskStore } from "@a2a-js/sdk";
+import dotenv from "dotenv";
+import express from "express";
+import { CrmOpenAIAgent, fetchMcpTools } from "./crm-openai-agent.js";
 
-export function createCrmAgentApp(): { app: Express; port: number } {
-  const app = express();
-  const PORT = Number(process.env.PORT) || 3001;
+dotenv.config();
 
-  const mcp = createCrmMcpServer();
+const PORT = Number(process.env.PORT) || 8000;
+const HOST = process.env.HOST || "localhost";
 
-  const agentCard: AgentCard = {
-    name: "CRM Research Agent",
-    description: "Fetches CRM data from GraphQL backend via MCP",
-    url: `http://localhost:${PORT}`,
-    provider: {
-      organization: "Your Organization",
-      url: "https://your-org.com",
+// Define the agent card (metadata)
+const getCrmAgentCard = () => ({
+  name: "CRM Agent",
+  description: "Fetches CRM data from GraphQL backend via MCP",
+  url: `http://${HOST}:${PORT}/`,
+  version: "1.0.0",
+  defaultInputModes: CrmOpenAIAgent.SUPPORTED_CONTENT_TYPES,
+  defaultOutputModes: CrmOpenAIAgent.SUPPORTED_CONTENT_TYPES,
+  capabilities: {
+    streaming: true,
+    pushNotifications: false,
+  },
+  skills: [
+    {
+      id: "fetch-crm-history",
+      name: "Fetch CRM History",
+      description: "Get CRM contact history",
+      tags: ["crm", "history", "contact"],
+      examples: ["Show me the CRM history for John Doe."],
     },
-    version: "1.0.0",
-    capabilities: {
-      streaming: false,
-      pushNotifications: false,
-      stateTransitionHistory: true,
-    },
-    securitySchemes: undefined,
-    security: undefined,
-    defaultInputModes: ["text/plain"],
-    defaultOutputModes: ["text/plain"],
-    skills: [
-      {
-        id: "fetch-crm-history",
-        name: "Fetch CRM History",
-        description: "Get CRM contact history",
-        tags: ["crm", "history", "contact"],
-        examples: ["Show me the CRM history for John Doe.", "Get all activities for Jane Smith."],
-        inputModes: ["text/plain"],
-        outputModes: ["text/plain"],
-      },
-    ],
-    supportsAuthenticatedExtendedCard: false,
-  };
+  ],
+});
 
-  const a2a = new A2AExpressApp({ agentCard });
+class CrmAgentExecutor {
+  private crmOpenAIAgent: CrmOpenAIAgent;
+  constructor(crmOpenAIAgent: CrmOpenAIAgent) {
+    this.crmOpenAIAgent = crmOpenAIAgent;
+  }
+  async execute(task: any): Promise<void> {
+    const text = task.input?.[0]?.parts?.[0]?.text || "";
+    const result = await this.crmOpenAIAgent.invoke(text, task.id);
+    task.result = {
+      parts: [{ text: result.content }],
+    };
+  }
+  async cancelTask(_taskId: string): Promise<void> {
+    // No-op for now
+    return Promise.resolve();
+  }
+}
 
-  a2a.registerTaskHandler(
-    "fetch-crm-history",
-    createTaskHandler(async ({ task, update, complete }) => {
-      const text = task.input[0]?.parts[0]?.text || "";
-      const match = text.match(/for (.+)/i);
-      if (!match) throw new Error("No contact name found");
+export async function createCrmAgentApp() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY environment variable not set.");
+  }
 
-      const contactName = match[1];
+  // Fetch MCP tools and create the agent
+  const tools = await fetchMcpTools();
+  const crmAgent = new CrmOpenAIAgent(tools);
 
-      update({ parts: [{ text: `Loading CRM data for ${contactName}...` }] });
-
-      const uri = new URL(`crm://contact/${encodeURIComponent(contactName)}`);
-      const resourceResult = await mcp.getResource(uri);
-
-      const crmData = JSON.parse(resourceResult.contents[0].text);
-
-      const summaryResult = await mcp.callTool("summarizeCrm", { history: crmData.history });
-
-      complete({
-        parts: [{ text: `CRM Data: ${crmData.history}` }, { text: `Summary: ${summaryResult.content[0].text}` }],
-      });
-    })
-  );
-
-  a2a.mount(app);
+  // Set up the A2A protocol-compliant server
+  const agentCard = getCrmAgentCard();
+  const taskStore = new InMemoryTaskStore();
+  const agentExecutor = new CrmAgentExecutor(crmAgent);
+  const requestHandler = new DefaultRequestHandler(agentCard, taskStore, agentExecutor);
+  const appBuilder = new A2AExpressApp(requestHandler);
+  const app = appBuilder.setupRoutes(express(), "");
 
   return { app, port: PORT };
 }

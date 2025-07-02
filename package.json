@@ -7,7 +7,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --watch './**/*.ts' --exec 'ts-node' server.ts",
-    "build": "rm -rf dist && tsc && node dist/mockCrmServer.js"
+    "build": "rm -rf dist && tsc",
+    "crmServer": "node dist/crm-index.js",
+    "crmAgent": "node dist/crm-agent/crm-index.js"
   },
   "keywords": [],
   "author": "",
@@ -27,11 +29,13 @@
     "langchain": "0.3.29",
     "node-fetch": "3.3.2",
     "openai": "5.8.2",
+    "uuid": "11.1.0",
     "zod": "3.25.67"
   },
   "devDependencies": {
     "@types/express": "5.0.3",
     "@types/node": "24.0.10",
+    "@types/uuid": "10.0.0",
     "nodemon": "3.1.10",
     "ts-node": "10.9.2",
     "typescript": "5.8.3"

@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { fileURLToPath } from "url";
 import { z } from "zod";
 
 // Create the MCP server instance
@@ -37,7 +38,9 @@ mcp.registerTool(
 export default mcp;
 
 // If run directly, start the server using stdio transport
-if (require.main === module) {
+// This is the ESM-safe equivalent of if (require.main === module).
+if (process.argv[1] && fileURLToPath(import.meta.url) === fileURLToPath(`file://${process.argv[1]}`)) {
+  // If run directly, start the server using stdio transport
   import("@modelcontextprotocol/sdk/server/stdio.js").then(({ StdioServerTransport }) => {
     const transport = new StdioServerTransport();
     mcp
