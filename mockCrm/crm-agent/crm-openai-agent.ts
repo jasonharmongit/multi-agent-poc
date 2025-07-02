@@ -42,18 +42,23 @@ export class CrmOpenAIAgent {
   private model: ChatOpenAI;
   private agent: any; // LangChain agent instance
 
-  constructor(tools: any[]) {
+  private constructor(tools: any[], model: ChatOpenAI, agent: any) {
     this.tools = tools;
-    this.model = new ChatOpenAI({
+    this.model = model;
+    this.agent = agent;
+  }
+
+  static async create(tools: any[]): Promise<CrmOpenAIAgent> {
+    const model = new ChatOpenAI({
       modelName: "gpt-4.1-mini-2025-04-14",
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
-    this.agent = createReactAgent({
-      llm: this.model,
-      tools: this.tools,
+    const agent = await createReactAgent({
+      llm: model,
+      tools: tools,
       prompt: PromptTemplate.fromTemplate(SYSTEM_INSTRUCTION),
-      // To enforce response format, use prompt instructions or post-process output with zod
     });
+    return new CrmOpenAIAgent(tools, model, agent);
   }
 
   async invoke(query: string, sessionId: string) {

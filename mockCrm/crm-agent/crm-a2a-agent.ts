@@ -56,7 +56,7 @@ export async function createCrmAgentApp() {
 
   // Fetch MCP tools and create the agent
   const tools = await fetchMcpTools();
-  const crmAgent = new CrmOpenAIAgent(tools);
+  const crmAgent = await CrmOpenAIAgent.create(tools);
 
   // Set up the A2A protocol-compliant server
   const agentCard = getCrmAgentCard();
