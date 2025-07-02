@@ -10,7 +10,7 @@ export const companies = [
   },
   {
     id: 2,
-    name: "Hubspot",
+    name: "Example Inc.",
     industry: "Technology",
     website: "https://globex.com",
     address: "456 Elm St, Metropolis",
