@@ -10,7 +10,8 @@
     "build": "rm -rf dist && tsc",
     "crm-mcp": "node dist/crm-agent/crm-mcp-server.js",
     "crm-agent": "node dist/crm-agent/crm-index.js",
-    "crm-example": "node dist/crm-agent/stream-crm-history-example.js"
+    "crm-run": "node dist/crm-agent/run-crm-agent.js",
+    "crm-stream": "node dist/crm-agent/stream-crm-agent.js"
   },
   "keywords": [],
   "author": "",

@@ -58,55 +58,22 @@ export class CrmOpenAIAgent {
     if (!sessionId) throw new Error("Session ID must not be empty");
     const config = { configurable: { thread_id: sessionId } };
     try {
-      await this.agent.invoke({ input: query }, config);
+      const result = await this.agent.invoke({ input: query }, config);
+      return result;
     } catch (err) {
       console.error("Agent invocation error:", err);
       throw err;
     }
-    return this.getAgentResponse(config);
   }
 
   async *stream(query: string, sessionId: string) {
     const config = { configurable: { thread_id: sessionId } };
     for await (const item of this.agent.stream({ input: query }, config, { streamMode: "values" })) {
-      yield {
-        is_task_complete: false,
-        require_user_input: false,
-        content: "Processing...",
-      };
+      yield item;
     }
-    yield this.getAgentResponse(config);
-  }
-
-  private getAgentResponse(config: any) {
-    const currentState = this.agent.getState ? this.agent.getState(config) : undefined;
-    const structuredResponse = currentState?.values?.structured_response;
-    if (structuredResponse && ResponseFormat.safeParse(structuredResponse).success) {
-      if (structuredResponse.status === "inputRequired") {
-        return {
-          is_task_complete: false,
-          require_user_input: true,
-          content: structuredResponse.message,
-        };
-      } else if (structuredResponse.status === "error") {
-        return {
-          is_task_complete: false,
-          require_user_input: true,
-          content: structuredResponse.message,
-        };
-      } else if (structuredResponse.status === "completed") {
-        return {
-          is_task_complete: true,
-          require_user_input: false,
-          content: structuredResponse.message,
-        };
-      }
-    }
-    return {
-      is_task_complete: false,
-      require_user_input: true,
-      content: "We are unable to process your request at the moment. Please try again.",
-    };
+    // Optionally, yield the final result again if needed
+    // const result = await this.agent.invoke({ input: query }, config);
+    // yield result;
   }
 
   async close() {

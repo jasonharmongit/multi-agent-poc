@@ -1,24 +1,14 @@
-import { A2AClient, MessageSendParams, Part, Task, TaskArtifactUpdateEvent, TaskStatusUpdateEvent } from "@a2a-js/sdk";
-// If you get a type error for uuid, run: pnpm add -D @types/uuid
+import { A2AClient, MessageSendParams, Task, TaskArtifactUpdateEvent, TaskStatusUpdateEvent } from "@a2a-js/sdk";
 import { v4 as uuidv4 } from "uuid";
 
-// Point this to your running CRM agent
 const client = new A2AClient("http://localhost:8000");
 
-function getTextFromPart(part: Part | undefined): string {
-  // Only return .text if this is a text part
-  if (part && "text" in part && typeof (part as any).text === "string") {
-    return (part as any).text;
-  }
-  return "";
-}
-
-async function streamCrmHistory() {
+async function streamTask() {
   const messageId = uuidv4();
   try {
-    console.log(`\n--- Starting streaming CRM history task for message ${messageId} ---`);
+    console.log(`\n--- Starting streaming task for message ${messageId} ---`);
 
-    // Construct the MessageSendParams object
+    // Construct the `MessageSendParams` object.
     const streamParams: MessageSendParams = {
       message: {
         messageId: messageId,
@@ -28,7 +18,7 @@ async function streamCrmHistory() {
       },
     };
 
-    // Use the sendMessageStream method
+    // Use the `sendMessageStream` method.
     const stream = client.sendMessageStream(streamParams);
     let currentTaskId: string | undefined;
 
@@ -43,23 +33,30 @@ async function streamCrmHistory() {
       // Differentiate subsequent stream events.
       if ((event as TaskStatusUpdateEvent).kind === "status-update") {
         const statusEvent = event as TaskStatusUpdateEvent;
-        const text = getTextFromPart(statusEvent.status.message?.parts[0]);
-        // console.log(`[${statusEvent.taskId}] Status Update: ${statusEvent.status.state} - ${text}`);
+        if (statusEvent.status.message?.parts?.[0]?.kind === "text") {
+          console.log(
+            `[${statusEvent.taskId}] Status Update: ${statusEvent.status.state} - ${statusEvent.status.message.parts[0].text}`
+          );
+        } else {
+          console.log(`[${statusEvent.taskId}] Status Update: ${statusEvent.status.state}`);
+        }
         if (statusEvent.final) {
-          // console.log(`[${statusEvent.taskId}] Stream marked as final.`);
+          console.log(`[${statusEvent.taskId}] Stream marked as final.`);
           break; // Exit loop when server signals completion
         }
       } else if ((event as TaskArtifactUpdateEvent).kind === "artifact-update") {
         const artifactEvent = event as TaskArtifactUpdateEvent;
+        const artifact = artifactEvent.artifact;
+        const artifactPart = artifact.parts[0];
         // Use artifact.name or artifact.artifactId for identification
-        // console.log(
-        //   `[${artifactEvent.taskId}] Artifact Update: ` +
-        //     `${artifactEvent.artifact.name ?? artifactEvent.artifact.artifactId} - ` +
-        //     `Part Count: ${artifactEvent.artifact.parts.length}`
-        // );
+        console.log(
+          `[${artifactEvent.taskId}] Artifact Update: ${artifact.name ?? artifact.artifactId}: ${
+            artifactPart.kind === "text" ? artifactPart.text : "No text part"
+          }`
+        );
       } else {
         // This could be a direct Message response if the agent doesn't create a task.
-        // console.log("Received direct message response in stream:", event);
+        console.log("Received direct message response in stream:", event);
       }
     }
     console.log(`--- Streaming for message ${messageId} finished ---`);
@@ -68,4 +65,4 @@ async function streamCrmHistory() {
   }
 }
 
-streamCrmHistory();
+streamTask();
