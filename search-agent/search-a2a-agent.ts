@@ -17,8 +17,8 @@ const HOST = "localhost";
 
 // Define the agent card (metadata)
 export const searchAgentCard = () => ({
-  name: "Research Agent",
-  description: "Fetches data from the internet",
+  name: "Company News Agent",
+  description: "Fetch news about a company or search the internet",
   url: `http://${HOST}:${PORT}/`,
   version: "1.0.0",
   defaultInputModes: ["text", "text/plain"],
@@ -31,7 +31,8 @@ export const searchAgentCard = () => ({
     {
       id: "search-internet",
       name: "Search the internet",
-      description: "Search the internet for information",
+      description:
+        "Search the internet for any kind of current information you don't know, like for recent news about a company. Example: 'Find recent company news about Acme Inc.",
       tags: ["search", "internet", "web"],
       examples: ["Find recent company news about Acme Inc."],
     },

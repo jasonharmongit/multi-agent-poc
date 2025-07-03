@@ -7,7 +7,7 @@ SCRIPTS=(
   "crm-agent"
   "search-mcp"
   "search-agent"
-  "super-mcp"
+  # "super-mcp"
   "super-agent"
 )
 
