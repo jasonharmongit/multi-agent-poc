@@ -12,8 +12,8 @@ import { CrmOpenAIAgent } from "./crm-openai-agent.js";
 
 dotenv.config();
 
-const PORT = Number(process.env.CRM_AGENT_PORT) || 8000;
-const HOST = process.env.CRM_AGENT_HOST || "localhost";
+const PORT = Number(process.env.CRM_AGENT_PORT);
+const HOST = "localhost";
 
 // Define the agent card (metadata)
 export const crmAgentCard = () => ({

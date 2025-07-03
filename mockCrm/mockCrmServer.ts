@@ -1,8 +1,10 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
+import dotenv from "dotenv";
 import Fuse from "fuse.js";
 import { activities, companies, contacts } from "./mockCrmDb.js";
 import { typeDefs } from "./schema.js";
+dotenv.config();
 
 const fuse = new Fuse(contacts, {
   keys: ["first_name", "last_name", "email"],
@@ -49,7 +51,7 @@ const resolvers = {
 const server = new ApolloServer({ typeDefs, resolvers });
 
 const start = async () => {
-  const { url } = await startStandaloneServer(server, { listen: { port: 4000 } });
+  const { url } = await startStandaloneServer(server, { listen: { port: Number(process.env.CRM_MOCK_DB_PORT) } });
   console.log(`🚀 Server ready at ${url}`);
 };
 

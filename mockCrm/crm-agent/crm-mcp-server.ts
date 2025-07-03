@@ -1,6 +1,11 @@
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import dotenv from "dotenv";
 import express, { Request, Response } from "express";
 import { getServer } from "./crm-mcp.js";
+
+dotenv.config();
+
+const PORT = Number(process.env.CRM_MCP_SERVER_PORT);
 
 const app = express();
 app.use(express.json());
@@ -50,7 +55,6 @@ app.all("/mcp", (req: Request, res: Response) => {
 });
 
 // Start the server
-const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`MCP Stateless Streamable HTTP Server listening on port ${PORT}`);
 });
