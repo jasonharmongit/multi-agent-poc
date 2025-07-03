@@ -1,6 +1,6 @@
 import { A2AExpressApp, AgentExecutor, DefaultRequestHandler, InMemoryTaskStore, TaskStore } from "@a2a-js/sdk";
 import express from "express";
-import CrmAgentExecutor, { crmAgentCard } from "./crm-a2a-agent2.js";
+import CrmAgentExecutor, { crmAgentCard } from "./crm-a2a-agent.js";
 
 const taskStore: TaskStore = new InMemoryTaskStore();
 const agentExecutor: AgentExecutor = await CrmAgentExecutor.create();
