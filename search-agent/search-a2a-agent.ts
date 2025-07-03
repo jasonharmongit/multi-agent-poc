@@ -8,17 +8,17 @@ import {
 } from "@a2a-js/sdk";
 import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
-import { CrmOpenAIAgent } from "./crm-openai-agent.js";
+import { SearchOpenAIAgent } from "./search-openai-agent.js";
 
 dotenv.config();
 
-const PORT = Number(process.env.CRM_AGENT_PORT);
+const PORT = Number(process.env.SEARCH_AGENT_PORT);
 const HOST = "localhost";
 
 // Define the agent card (metadata)
-export const crmAgentCard = () => ({
-  name: "CRM Agent",
-  description: "Fetches CRM data from GraphQL backend via MCP",
+export const searchAgentCard = () => ({
+  name: "Research Agent",
+  description: "Fetches data from the internet",
   url: `http://${HOST}:${PORT}/`,
   version: "1.0.0",
   defaultInputModes: ["text", "text/plain"],
@@ -29,26 +29,26 @@ export const crmAgentCard = () => ({
   },
   skills: [
     {
-      id: "fetch-crm-history",
-      name: "Fetch CRM History",
-      description: "Get CRM contact history",
-      tags: ["crm", "history", "contact"],
-      examples: ["Show me the CRM history for John Doe."],
+      id: "search-internet",
+      name: "Search the internet",
+      description: "Search the internet for information",
+      tags: ["search", "internet", "web"],
+      examples: ["Find recent company news about Acme Inc."],
     },
   ],
 });
 
-class CrmAgentExecutor implements AgentExecutor {
+class SearchAgentExecutor implements AgentExecutor {
   private cancelledTasks = new Set<string>();
-  private crmOpenAIAgent: CrmOpenAIAgent;
+  private searchOpenAIAgent: SearchOpenAIAgent;
 
-  private constructor(crmOpenAIAgent: CrmOpenAIAgent) {
-    this.crmOpenAIAgent = crmOpenAIAgent;
+  private constructor(searchOpenAIAgent: SearchOpenAIAgent) {
+    this.searchOpenAIAgent = searchOpenAIAgent;
   }
 
-  static async create(): Promise<CrmAgentExecutor> {
-    const crmOpenAIAgent = await CrmOpenAIAgent.create();
-    return new CrmAgentExecutor(crmOpenAIAgent);
+  static async create(): Promise<SearchAgentExecutor> {
+    const searchOpenAIAgent = await SearchOpenAIAgent.create();
+    return new SearchAgentExecutor(searchOpenAIAgent);
   }
 
   public cancelTask = async (taskId: string, eventBus: ExecutionEventBus): Promise<void> => {
@@ -73,7 +73,9 @@ class CrmAgentExecutor implements AgentExecutor {
     const taskId = requestContext.taskId;
     const contextId = requestContext.contextId;
 
-    console.log(`[CRM Agent] Processing message ${userMessage.messageId} for task ${taskId} (context: ${contextId})`);
+    console.log(
+      `[Search Agent] Processing message ${userMessage.messageId} for task ${taskId} (context: ${contextId})`
+    );
 
     // 1. Publish initial Task event if it's a new task
     if (!existingTask) {
@@ -103,7 +105,7 @@ class CrmAgentExecutor implements AgentExecutor {
           kind: "message",
           role: "agent",
           messageId: uuidv4(),
-          parts: [{ kind: "text", text: "Querying Mock Hubspot CRM..." }],
+          parts: [{ kind: "text", text: "Searching the internet..." }],
           taskId: taskId,
           contextId: contextId,
         },
@@ -114,12 +116,12 @@ class CrmAgentExecutor implements AgentExecutor {
     eventBus.publish(workingStatusUpdate);
 
     // Call the OpenAI agent with the user's message
-    const result = await this.crmOpenAIAgent.invoke(userMessageText, taskId);
+    const result = await this.searchOpenAIAgent.invoke(userMessageText, taskId);
     const resultText = result.output;
 
     // Check for request cancellation
     if (this.cancelledTasks.has(taskId)) {
-      console.log(`[CRM Agent] Request cancelled for task: ${taskId}`);
+      console.log(`[Search Agent] Request cancelled for task: ${taskId}`);
       const cancelledUpdate: TaskStatusUpdateEvent = {
         kind: "status-update",
         taskId: taskId,
@@ -142,7 +144,7 @@ class CrmAgentExecutor implements AgentExecutor {
       contextId: contextId,
       artifact: {
         artifactId: taskId,
-        name: "crm-agent-result",
+        name: "search-agent-result",
         parts: [{ kind: "text", text: resultText || "No result" }],
       },
       append: false, // Each emission is a complete file snapshot
@@ -174,4 +176,4 @@ class CrmAgentExecutor implements AgentExecutor {
   }
 }
 
-export default CrmAgentExecutor;
+export default SearchAgentExecutor;
