@@ -1,7 +1,7 @@
 import { A2AClient, MessageSendParams, Task, TaskArtifactUpdateEvent, TaskStatusUpdateEvent } from "@a2a-js/sdk";
 import { v4 as uuidv4 } from "uuid";
 
-const client = new A2AClient("http://localhost:8000");
+const client = new A2AClient("http://localhost:3001");
 
 async function streamTask() {
   const messageId = uuidv4();
