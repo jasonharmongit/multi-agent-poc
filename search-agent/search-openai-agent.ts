@@ -91,7 +91,7 @@ export async function fetchMcpTools(): Promise<{ tools: any[]; mcpClient: Client
     new URL(`http://localhost:${process.env.SEARCH_MCP_SERVER_PORT}/mcp`)
   );
   await mcpClient.connect(transport);
-  const tools = await loadMcpTools("MinimalCrmServer", mcpClient);
+  const tools = await loadMcpTools("SearchAgentMCPServer", mcpClient);
   // Do NOT close mcpClient here!
   return { tools, mcpClient };
 }

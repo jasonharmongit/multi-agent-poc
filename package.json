@@ -15,8 +15,10 @@
     "crm-stream": "node dist/mockCrm/crm-agent/crm-agent-stream.js",
     "search-mcp": "node dist/search-agent/search-mcp-server.js",
     "search-agent": "node dist/search-agent/search-index.js",
-    "search-run": "node dist/search-agent/run-search-agent.js",
-    "search-stream": "node dist/search-agent/search-agent-stream.js"
+    "search-stream": "node dist/search-agent/search-agent-stream.js",
+    "super-mcp": "node dist/super-agent/super-mcp-server.js",
+    "super-agent": "node dist/super-agent/super-index.js",
+    "super-stream": "node dist/super-agent/super-agent-stream.js"
   },
   "keywords": [],
   "author": "",

@@ -19,7 +19,7 @@ const ResponseFormat = z.object({
   message: z.string(),
 });
 
-export class CrmOpenAIAgent {
+export class SuperOpenAIAgent {
   private tools: any[];
   private model: ChatOpenAI;
   private agent: any; // AgentExecutor instance
@@ -32,7 +32,7 @@ export class CrmOpenAIAgent {
     this.mcpClient = mcpClient;
   }
 
-  static async create(): Promise<CrmOpenAIAgent> {
+  static async create(): Promise<SuperOpenAIAgent> {
     const { tools, mcpClient } = await fetchMcpTools();
     const llm = new ChatOpenAI({
       modelName: "gpt-4.1-mini-2025-04-14",
@@ -50,7 +50,7 @@ export class CrmOpenAIAgent {
       tools,
       verbose: true,
     });
-    return new CrmOpenAIAgent(tools, llm, agentExecutor, mcpClient);
+    return new SuperOpenAIAgent(tools, llm, agentExecutor, mcpClient);
   }
 
   async invoke(query: string, sessionId: string) {
@@ -80,16 +80,18 @@ export class CrmOpenAIAgent {
     console.log("Closing MCP client");
     await this.mcpClient.close();
   }
+
+  static SUPPORTED_CONTENT_TYPES = ["text", "text/plain"];
 }
 
 // Helper to fetch MCP tools and keep the client open
 export async function fetchMcpTools(): Promise<{ tools: any[]; mcpClient: Client }> {
   const mcpClient = new Client({ name: "crm-mcp-client", version: "1.0.0" });
   const transport = new StreamableHTTPClientTransport(
-    new URL(`http://localhost:${process.env.CRM_MCP_SERVER_PORT}/mcp`)
+    new URL(`http://localhost:${process.env.SUPER_MCP_SERVER_PORT}/mcp`)
   );
   await mcpClient.connect(transport);
-  const tools = await loadMcpTools("CrmAgentMCPServer", mcpClient);
+  const tools = await loadMcpTools("SuperAgentMCPServer", mcpClient);
   // Do NOT close mcpClient here!
   return { tools, mcpClient };
 }

@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export function getServer() {
   const mcp = new McpServer({
-    name: "MinimalCrmServer",
+    name: "SearchAgentMCPServer",
     version: "1.0.0",
   });
 
