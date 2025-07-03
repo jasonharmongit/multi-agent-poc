@@ -1,36 +1,18 @@
-import { PromptTemplate } from "@langchain/core/prompts";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { loadMcpTools } from "@langchain/mcp-adapters";
 import { ChatOpenAI } from "@langchain/openai";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import dotenv from "dotenv";
-import { createReactAgent } from "langchain/agents";
-import { dirname, join } from "path";
+import { AgentExecutor, createOpenAIToolsAgent } from "langchain/agents";
+import { pull } from "langchain/hub";
+import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { z } from "zod";
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-const SYSTEM_INSTRUCTION = `
-You are a specialized assistant for CRM queries.
-Your sole purpose is to use the available CRM tools to answer questions about CRM history and contacts.
-If the user asks about anything else, politely state that you cannot help with that topic.
-
-TOOLS:
-{tools}
-
-TOOL NAMES:
-{tool_names}
-
-AGENT SCRATCHPAD:
-{agent_scratchpad}
-
-Set response status to inputRequired if the user needs to provide more information.
-Set response status to error if there is an error while processing the request.
-Set response status to completed if the request is complete.
-`;
 
 const ResponseFormat = z.object({
   status: z.enum(["inputRequired", "completed", "error"]).default("inputRequired"),
@@ -40,7 +22,7 @@ const ResponseFormat = z.object({
 export class CrmOpenAIAgent {
   private tools: any[];
   private model: ChatOpenAI;
-  private agent: any; // LangChain agent instance
+  private agent: any; // AgentExecutor instance
 
   private constructor(tools: any[], model: ChatOpenAI, agent: any) {
     this.tools = tools;
@@ -49,29 +31,41 @@ export class CrmOpenAIAgent {
   }
 
   static async create(tools: any[]): Promise<CrmOpenAIAgent> {
-    const model = new ChatOpenAI({
+    const llm = new ChatOpenAI({
       modelName: "gpt-4.1-mini-2025-04-14",
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
-    const agent = await createReactAgent({
-      llm: model,
-      tools: tools,
-      prompt: PromptTemplate.fromTemplate(SYSTEM_INSTRUCTION),
+    // Use the default OpenAI tools agent prompt from the hub
+    const prompt = (await pull("hwchase17/openai-tools-agent")) as ChatPromptTemplate;
+    const agent = await createOpenAIToolsAgent({
+      llm,
+      tools,
+      prompt,
     });
-    return new CrmOpenAIAgent(tools, model, agent);
+    const agentExecutor = new AgentExecutor({
+      agent,
+      tools,
+      verbose: true,
+    });
+    return new CrmOpenAIAgent(tools, llm, agentExecutor);
   }
 
   async invoke(query: string, sessionId: string) {
+    if (!query) throw new Error("Query must not be empty");
+    if (!sessionId) throw new Error("Session ID must not be empty");
     const config = { configurable: { thread_id: sessionId } };
-    await this.agent.invoke({ messages: [{ role: "user", content: query }] }, config);
+    try {
+      await this.agent.invoke({ input: query }, config);
+    } catch (err) {
+      console.error("Agent invocation error:", err);
+      throw err;
+    }
     return this.getAgentResponse(config);
   }
 
   async *stream(query: string, sessionId: string) {
-    const inputs = { messages: [{ role: "user", content: query }] };
     const config = { configurable: { thread_id: sessionId } };
-    for await (const item of this.agent.stream(inputs, config, { streamMode: "values" })) {
-      const message = item.messages[item.messages.length - 1];
+    for await (const item of this.agent.stream({ input: query }, config, { streamMode: "values" })) {
       yield {
         is_task_complete: false,
         require_user_input: false,
@@ -82,8 +76,8 @@ export class CrmOpenAIAgent {
   }
 
   private getAgentResponse(config: any) {
-    const currentState = this.agent.getState(config);
-    const structuredResponse = currentState.values?.structured_response;
+    const currentState = this.agent.getState ? this.agent.getState(config) : undefined;
+    const structuredResponse = currentState?.values?.structured_response;
     if (structuredResponse && ResponseFormat.safeParse(structuredResponse).success) {
       if (structuredResponse.status === "inputRequired") {
         return {
@@ -118,12 +112,7 @@ export class CrmOpenAIAgent {
 // Helper to fetch MCP tools
 export async function fetchMcpTools(): Promise<any[]> {
   const mcpClient = new Client({ name: "crm-mcp-client", version: "1.0.0" });
-  // Use Node.js to spawn the MCP server as a subprocess via stdio
-  // Adjust the path to crm-mcp.js as needed for your project structure
-  const transport = new StdioClientTransport({
-    command: process.execPath, // Node.js executable
-    args: [join(__dirname, "crm-mcp.js")], // Path to the MCP server file
-  });
+  const transport = new StreamableHTTPClientTransport(new URL("http://localhost:3000/mcp"));
   await mcpClient.connect(transport);
   const tools = await loadMcpTools("MinimalCrmServer", mcpClient);
   await mcpClient.close();

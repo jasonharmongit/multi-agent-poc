@@ -37,8 +37,12 @@ class CrmAgentExecutor {
     this.crmOpenAIAgent = crmOpenAIAgent;
   }
   async execute(task: any): Promise<void> {
-    const text = task.input?.[0]?.parts?.[0]?.text || "";
-    const result = await this.crmOpenAIAgent.invoke(text, task.id);
+    // Prefer userMessage, fallback to input for compatibility
+    const text = task.userMessage?.parts?.[0]?.text ?? task.input?.[0]?.parts?.[0]?.text;
+    if (!text) {
+      throw new Error("Task input text must not be empty");
+    }
+    const result = await this.crmOpenAIAgent.invoke(text, task.taskId || task.id);
     task.result = {
       parts: [{ text: result.content }],
     };
