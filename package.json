@@ -8,8 +8,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --watch './**/*.ts' --exec 'ts-node' server.ts",
     "build": "rm -rf dist && tsc",
-    "crmServer": "node dist/crm-index.js",
-    "crmAgent": "node dist/crm-agent/crm-index.js"
+    "crm-mcp": "node dist/crm-agent/crm-mcp-server.js",
+    "crm-agent": "node dist/crm-agent/crm-index.js",
+    "crm-example": "node dist/crm-agent/stream-crm-history-example.js"
   },
   "keywords": [],
   "author": "",

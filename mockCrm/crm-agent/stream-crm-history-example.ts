@@ -44,22 +44,22 @@ async function streamCrmHistory() {
       if ((event as TaskStatusUpdateEvent).kind === "status-update") {
         const statusEvent = event as TaskStatusUpdateEvent;
         const text = getTextFromPart(statusEvent.status.message?.parts[0]);
-        console.log(`[${statusEvent.taskId}] Status Update: ${statusEvent.status.state} - ${text}`);
+        // console.log(`[${statusEvent.taskId}] Status Update: ${statusEvent.status.state} - ${text}`);
         if (statusEvent.final) {
-          console.log(`[${statusEvent.taskId}] Stream marked as final.`);
+          // console.log(`[${statusEvent.taskId}] Stream marked as final.`);
           break; // Exit loop when server signals completion
         }
       } else if ((event as TaskArtifactUpdateEvent).kind === "artifact-update") {
         const artifactEvent = event as TaskArtifactUpdateEvent;
         // Use artifact.name or artifact.artifactId for identification
-        console.log(
-          `[${artifactEvent.taskId}] Artifact Update: ` +
-            `${artifactEvent.artifact.name ?? artifactEvent.artifact.artifactId} - ` +
-            `Part Count: ${artifactEvent.artifact.parts.length}`
-        );
+        // console.log(
+        //   `[${artifactEvent.taskId}] Artifact Update: ` +
+        //     `${artifactEvent.artifact.name ?? artifactEvent.artifact.artifactId} - ` +
+        //     `Part Count: ${artifactEvent.artifact.parts.length}`
+        // );
       } else {
         // This could be a direct Message response if the agent doesn't create a task.
-        console.log("Received direct message response in stream:", event);
+        // console.log("Received direct message response in stream:", event);
       }
     }
     console.log(`--- Streaming for message ${messageId} finished ---`);

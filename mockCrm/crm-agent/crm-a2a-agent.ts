@@ -1,7 +1,7 @@
 import { A2AExpressApp, DefaultRequestHandler, InMemoryTaskStore } from "@a2a-js/sdk";
 import dotenv from "dotenv";
 import express from "express";
-import { CrmOpenAIAgent, fetchMcpTools } from "./crm-openai-agent.js";
+import { CrmOpenAIAgent } from "./crm-openai-agent.js";
 
 dotenv.config();
 
@@ -59,8 +59,7 @@ export async function createCrmAgentApp() {
   }
 
   // Fetch MCP tools and create the agent
-  const tools = await fetchMcpTools();
-  const crmAgent = await CrmOpenAIAgent.create(tools);
+  const crmAgent = await CrmOpenAIAgent.create();
 
   // Set up the A2A protocol-compliant server
   const agentCard = getCrmAgentCard();
